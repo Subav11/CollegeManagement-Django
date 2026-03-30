@@ -18,6 +18,8 @@
     <link rel="stylesheet" href="{% static 'dist/css/adminlte.min.css' %}">
     <!-- Google Font: Source Sans Pro -->
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+    <!-- Custom Login Page CSS -->
+    <link rel="stylesheet" href="{% static 'css/login-page.css' %}">
     <!-- Google Recaptcha     -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
@@ -26,12 +28,12 @@
     <div class="login-box">
         <div class="login-logo">
             <a href=""><b>College</b> Management System</a>
-
+            <p style="color: rgba(255,255,255,0.9); font-size: 1rem; margin-top: 0.5rem; font-weight: 400;">Manage Your Institution with Excellence</p>
         </div>
         <!-- /.login-logo -->
         <div class="card">
             <div class="card-body login-card-body">
-                <!-- <p class="login-box-msg">Sign in to start your session</p> -->
+                <p class="login-box-msg">Sign in to start your session</p>
                 {% if messages %}
                 <div class="col-12">
                     {% for message in messages %}
