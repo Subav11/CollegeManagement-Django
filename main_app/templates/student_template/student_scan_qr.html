@@ -1,0 +1,276 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}{{ page_title }}{% endblock page_title %}
+
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'css/qr-attendance.css' %}">
+{% endblock custom_css %}
+
+{% block content %}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-lg-7 col-md-10">
+
+                <!-- Scanner Card -->
+                <div class="scanner-card card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-qrcode mr-2"></i>Scan QR Code</h3>
+                    </div>
+                    <div class="card-body">
+
+                        <!-- Mode Tabs -->
+                        <div class="scanner-tabs">
+                            <button class="scanner-tab-btn active" id="tab-camera" onclick="switchTab('camera')">
+                                <i class="fas fa-camera mr-1"></i> Camera
+                            </button>
+                            <button class="scanner-tab-btn" id="tab-upload" onclick="switchTab('upload')">
+                                <i class="fas fa-upload mr-1"></i> Upload Image
+                            </button>
+                        </div>
+
+                        <!-- Camera Scanner -->
+                        <div id="scanner-camera-section">
+                            <div id="qr-reader"></div>
+                            <div class="qr-info-glass mt-3 text-center" style="color: rgba(255,255,255,0.6); font-size: 13px;">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Point your camera at the QR code displayed by your teacher
+                            </div>
+                        </div>
+
+                        <!-- Upload Section -->
+                        <div id="scanner-upload-section" style="display: none;">
+                            <div class="upload-area" id="upload-area" onclick="document.getElementById('qr-file-input').click()">
+                                <i class="fas fa-cloud-upload-alt d-block"></i>
+                                <p><strong>Click to upload</strong> or drag & drop</p>
+                                <p class="upload-hint">PNG, JPG, or screenshot of QR code</p>
+                            </div>
+                            <input type="file" id="qr-file-input" accept="image/*" style="display: none;">
+                        </div>
+
+                        <!-- Result Display -->
+                        <div id="scan-result" class="scan-result">
+                            <!-- Filled dynamically -->
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Instructions Card -->
+                <div class="qr-form-card card mt-4">
+                    <div class="card-header" style="background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);">
+                        <h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>How It Works</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 text-center mb-3">
+                                <div style="font-size: 36px; color: #667eea; margin-bottom: 8px;">
+                                    <i class="fas fa-camera"></i>
+                                </div>
+                                <h6>1. Scan</h6>
+                                <p class="text-muted mb-0" style="font-size: 13px;">Point camera at the QR code shown by your teacher</p>
+                            </div>
+                            <div class="col-md-4 text-center mb-3">
+                                <div style="font-size: 36px; color: #00b894; margin-bottom: 8px;">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <h6>2. Verify</h6>
+                                <p class="text-muted mb-0" style="font-size: 13px;">System verifies your identity and session validity</p>
+                            </div>
+                            <div class="col-md-4 text-center mb-3">
+                                <div style="font-size: 36px; color: #764ba2; margin-bottom: 8px;">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </div>
+                                <h6>3. Done!</h6>
+                                <p class="text-muted mb-0" style="font-size: 13px;">Attendance is marked automatically</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock content %}
+
+{% block custom_js %}
+<!-- html5-qrcode library (CDN) -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+$(document).ready(function () {
+    var html5QrCode = null;
+    var isProcessing = false;
+
+    // ── Initialize Camera Scanner ────────────────────────────
+    function initScanner() {
+        html5QrCode = new Html5Qrcode("qr-reader");
+
+        var config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0,
+        };
+
+        Html5Qrcode.getCameras().then(function (cameras) {
+            if (cameras && cameras.length > 0) {
+                // Prefer back camera
+                var cameraId = cameras[0].id;
+                for (var i = 0; i < cameras.length; i++) {
+                    if (cameras[i].label.toLowerCase().includes('back') ||
+                        cameras[i].label.toLowerCase().includes('rear') ||
+                        cameras[i].label.toLowerCase().includes('environment')) {
+                        cameraId = cameras[i].id;
+                        break;
+                    }
+                }
+
+                html5QrCode.start(
+                    cameraId,
+                    config,
+                    onScanSuccess,
+                    function (errorMessage) { /* ignore scan errors */ }
+                ).catch(function (err) {
+                    console.error("Camera start error:", err);
+                    showScanError("Could not start camera. Please use the upload option instead.");
+                });
+            } else {
+                showScanError("No cameras found. Please use the upload option.");
+            }
+        }).catch(function (err) {
+            console.error("Camera access error:", err);
+            showScanError("Camera access denied. Please allow camera permission or use the upload option.");
+        });
+    }
+
+    // Start scanner on page load
+    initScanner();
+
+    // ── QR Scan Success ──────────────────────────────────────
+    function onScanSuccess(decodedText) {
+        if (isProcessing) return;
+        isProcessing = true;
+
+        // Stop scanner temporarily
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().catch(function () {});
+        }
+
+        validateQR(decodedText);
+    }
+
+    // ── Validate QR with Backend ─────────────────────────────
+    function validateQR(token) {
+        $.ajax({
+            url: "{% url 'student_validate_qr' %}",
+            type: 'POST',
+            data: { token: token },
+        }).done(function (resp) {
+            if (resp.success) {
+                showScanSuccess(resp);
+            } else {
+                showScanError(resp.error);
+            }
+        }).fail(function () {
+            showScanError('Network error. Please check your connection and try again.');
+        }).always(function () {
+            isProcessing = false;
+        });
+    }
+
+    // ── Show Success ─────────────────────────────────────────
+    function showScanSuccess(data) {
+        var statusClass = data.status === 'late' ? 'late' : 'present';
+        var statusText = data.status === 'late' ? 'Late' : 'Present';
+        var icon = data.status === 'late' ? 'fas fa-clock' : 'fas fa-check';
+
+        var html = '<div class="result-icon"><i class="' + icon + '"></i></div>';
+        html += '<h4>Attendance Marked!</h4>';
+        html += '<p>' + data.message + '</p>';
+        html += '<span class="status-pill ' + statusClass + '">' + statusText + '</span>';
+        html += '<p style="margin-top: 12px; font-size: 12px; color: rgba(255,255,255,0.4);">Scanned at ' + data.scanned_at + '</p>';
+        html += '<button class="btn btn-scan-again" onclick="resetScanner()"><i class="fas fa-redo mr-1"></i>Scan Another</button>';
+
+        $('#scan-result').html(html).removeClass('error').addClass('success').fadeIn(400);
+    }
+
+    // ── Show Error ───────────────────────────────────────────
+    function showScanError(message) {
+        var html = '<div class="result-icon"><i class="fas fa-times"></i></div>';
+        html += '<h4>Scan Failed</h4>';
+        html += '<p>' + message + '</p>';
+        html += '<button class="btn btn-scan-again" onclick="resetScanner()"><i class="fas fa-redo mr-1"></i>Try Again</button>';
+
+        $('#scan-result').html(html).removeClass('success').addClass('error').fadeIn(400);
+    }
+
+    // ── File Upload Handling ─────────────────────────────────
+    $('#qr-file-input').on('change', function (e) {
+        var file = e.target.files[0];
+        if (!file) return;
+
+        if (isProcessing) return;
+        isProcessing = true;
+
+        var tempQrCode = new Html5Qrcode("qr-reader");
+        tempQrCode.scanFile(file, true).then(function (decodedText) {
+            tempQrCode.clear();
+            validateQR(decodedText);
+        }).catch(function (err) {
+            tempQrCode.clear();
+            isProcessing = false;
+            showScanError('Could not read QR code from the image. Please try a clearer image.');
+        });
+
+        // Reset file input
+        $(this).val('');
+    });
+
+    // Drag & drop
+    var $uploadArea = $('#upload-area');
+    $uploadArea.on('dragover', function (e) {
+        e.preventDefault();
+        $(this).css('border-color', '#00b894');
+    }).on('dragleave', function () {
+        $(this).css('border-color', 'rgba(255, 255, 255, 0.2)');
+    }).on('drop', function (e) {
+        e.preventDefault();
+        $(this).css('border-color', 'rgba(255, 255, 255, 0.2)');
+        var file = e.originalEvent.dataTransfer.files[0];
+        if (file) {
+            var dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            document.getElementById('qr-file-input').files = dataTransfer.files;
+            $('#qr-file-input').trigger('change');
+        }
+    });
+
+    // ── Make resetScanner globally accessible ─────────────────
+    window.resetScanner = function () {
+        $('#scan-result').fadeOut(300, function () {
+            $(this).html('').removeClass('success error');
+        });
+        isProcessing = false;
+
+        // Restart camera if on camera tab
+        if ($('#tab-camera').hasClass('active')) {
+            initScanner();
+        }
+    };
+});
+
+// ── Tab Switching ─────────────────────────────────────────────
+function switchTab(mode) {
+    $('.scanner-tab-btn').removeClass('active');
+    $('#tab-' + mode).addClass('active');
+
+    if (mode === 'camera') {
+        $('#scanner-camera-section').show();
+        $('#scanner-upload-section').hide();
+    } else {
+        $('#scanner-camera-section').hide();
+        $('#scanner-upload-section').show();
+    }
+}
+</script>
+{% endblock custom_js %}

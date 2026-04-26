@@ -11,11 +11,18 @@ class LoginCheckMiddleWare(MiddlewareMixin):
             if user.user_type == '1': # Is it the HOD/Admin
                 if modulename == 'main_app.student_views':
                     return redirect(reverse('admin_home'))
+                # Allow admin access to qr_views (both staff and student endpoints)
             elif user.user_type == '2': #  Staff :-/ ?
                 if modulename == 'main_app.student_views' or modulename == 'main_app.hod_views':
                     return redirect(reverse('staff_home'))
+                # Block staff from student QR endpoints
+                if modulename == 'main_app.qr_views' and view_func.__name__.startswith('student_'):
+                    return redirect(reverse('staff_home'))
             elif user.user_type == '3': # ... or Student ?
                 if modulename == 'main_app.hod_views' or modulename == 'main_app.staff_views':
+                    return redirect(reverse('student_home'))
+                # Block students from staff QR endpoints
+                if modulename == 'main_app.qr_views' and view_func.__name__.startswith('staff_'):
                     return redirect(reverse('student_home'))
             else: # None of the aforementioned ? Please take the user to login page
                 return redirect(reverse('login_page'))
@@ -24,3 +31,4 @@ class LoginCheckMiddleWare(MiddlewareMixin):
                 pass
             else:
                 return redirect(reverse('login_page'))
+

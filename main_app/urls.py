@@ -17,7 +17,7 @@ from django.urls import path
 
 from main_app.EditResultView import EditResultView
 
-from . import hod_views, staff_views, student_views, views
+from . import hod_views, staff_views, student_views, views, qr_views
 
 urlpatterns = [
     path("", views.login_page, name='login_page'),
@@ -131,5 +131,21 @@ urlpatterns = [
          name="student_view_notification"),
     path('student/view/result/', student_views.student_view_result,
          name='student_view_result'),
+
+    # QR Code Attendance — Staff
+    path("staff/qr-attendance/", qr_views.staff_qr_attendance,
+         name='staff_qr_attendance'),
+    path("staff/qr-attendance/generate/", qr_views.staff_generate_qr,
+         name='staff_generate_qr'),
+    path("staff/qr-attendance/refresh/", qr_views.staff_refresh_qr,
+         name='staff_refresh_qr'),
+    path("staff/qr-attendance/log/", qr_views.staff_qr_attendance_log,
+         name='staff_qr_attendance_log'),
+
+    # QR Code Attendance — Student
+    path("student/scan-qr/", qr_views.student_scan_qr,
+         name='student_scan_qr'),
+    path("student/validate-qr/", qr_views.student_validate_qr,
+         name='student_validate_qr'),
 
 ]

@@ -175,6 +175,42 @@ class StudentResult(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class QRAttendanceSession(models.Model):
+    """Represents a single QR code generation event by a staff member."""
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    session = models.ForeignKey(Session, on_delete=models.CASCADE)
+    token = models.CharField(max_length=1024, unique=True)
+    expires_at = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"QR Session #{self.pk} - {self.subject.name} ({self.created_at})"
+
+
+class QRAttendanceLog(models.Model):
+    """Individual student scan record for a QR attendance session."""
+    STATUS_CHOICES = [('present', 'Present'), ('late', 'Late')]
+
+    qr_session = models.ForeignKey(QRAttendanceSession, on_delete=models.CASCADE, related_name='logs')
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    attendance_report = models.ForeignKey(AttendanceReport, on_delete=models.SET_NULL, null=True, blank=True)
+    scanned_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='present')
+    user_agent = models.TextField(blank=True, default='')
+
+    class Meta:
+        unique_together = ('qr_session', 'student')
+        ordering = ['-scanned_at']
+
+    def __str__(self):
+        return f"{self.student} - {self.status} ({self.scanned_at})"
+
+
 @receiver(post_save, sender=CustomUser)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:

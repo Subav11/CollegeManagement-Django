@@ -378,6 +378,16 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                {% url 'staff_qr_attendance' as staff_qr_attendance %}
+                                <a href="{{staff_qr_attendance}}"
+                                    class="nav-link {% if staff_qr_attendance == request.path %} active {% endif %}">
+                                    <i class="nav-icon fas fa-qrcode"></i>
+                                    <p>
+                                        QR Attendance
+                                    </p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 {% url 'staff_update_attendance' as staff_update_attendance %}
                                 <a href="{{staff_update_attendance}}"
                                     class="nav-link {% if staff_update_attendance == request.path %} active {% endif %}">
@@ -481,6 +491,15 @@
                                                 class="nav-link {% if student_view_attendance == request.path %} active {% endif %}">
                                                 <i class="nav-icon fas fa-calendar-alt"></i>
                                                 <p>View Attendance</p>
+                                            </a>
+                                        </li>
+
+                                        <li class="nav-item">
+                                            {% url 'student_scan_qr' as student_scan_qr %}
+                                            <a href="{{student_scan_qr}}"
+                                                class="nav-link {% if student_scan_qr == request.path %} active {% endif %}">
+                                                <i class="nav-icon fas fa-qrcode"></i>
+                                                <p>Scan QR</p>
                                             </a>
                                         </li>
 

@@ -1,0 +1,329 @@
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}{{ page_title }}{% endblock page_title %}
+
+{% block custom_css %}
+<link rel="stylesheet" href="{% static 'css/qr-attendance.css' %}">
+{% endblock custom_css %}
+
+{% block content %}
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Left Column: Form + QR Display -->
+            <div class="col-lg-7">
+                <!-- Subject/Session Selection -->
+                <div class="qr-form-card card mb-4">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-cog mr-2"></i>Session Configuration</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Subject</label>
+                                    <select name="subject" class="form-control" id="qr-subject">
+                                        <option value="">— Select Subject —</option>
+                                        {% for subject in subjects %}
+                                        <option value="{{ subject.id }}">{{ subject.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Session Year</label>
+                                    <select name="session" class="form-control" id="qr-session">
+                                        <option value="">— Select Session —</option>
+                                        {% for session in sessions %}
+                                        <option value="{{ session.id }}">{{ session }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" id="btn-generate-qr" class="btn btn-qr-generate btn-block">
+                            <i class="fas fa-qrcode mr-2"></i>Generate QR Code
+                        </button>
+                    </div>
+                </div>
+
+                <!-- QR Code Display -->
+                <div class="qr-card card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-qrcode mr-2"></i>Live QR Code</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Placeholder (shown before generation) -->
+                        <div id="qr-placeholder" class="qr-placeholder">
+                            <i class="fas fa-qrcode d-block"></i>
+                            <p>Select a subject and session, then click<br><strong>Generate QR Code</strong> to begin</p>
+                        </div>
+
+                        <!-- QR Display (hidden initially) -->
+                        <div id="qr-display" style="display: none;">
+                            <div class="qr-display-area">
+                                <div class="qr-image-wrapper pulse-active" id="qr-image-wrapper">
+                                    <img id="qr-image" src="" alt="Attendance QR Code">
+                                </div>
+
+                                <div class="countdown-container">
+                                    <div class="countdown-ring">
+                                        <svg viewBox="0 0 100 100">
+                                            <defs>
+                                                <linearGradient id="countdown-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                    <stop offset="0%" style="stop-color:#667eea"/>
+                                                    <stop offset="100%" style="stop-color:#764ba2"/>
+                                                </linearGradient>
+                                            </defs>
+                                            <circle class="ring-bg" cx="50" cy="50" r="42"/>
+                                            <circle class="ring-progress" id="ring-progress" cx="50" cy="50" r="42"/>
+                                        </svg>
+                                        <span class="countdown-time" id="countdown-time">10:00</span>
+                                    </div>
+                                    <div>
+                                        <span class="countdown-label">Time Remaining</span>
+                                        <div class="qr-info-glass mt-2" id="qr-subject-info" style="padding: 8px 14px;">
+                                            <i class="fas fa-book"></i>
+                                            <span id="qr-subject-name">—</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="button" id="btn-refresh-qr" class="btn btn-qr-refresh mt-3">
+                                    <i class="fas fa-sync-alt mr-1"></i> Refresh QR Code
+                                </button>
+                            </div>
+
+                            <div class="qr-info-glass">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <span class="info-label">Duration</span>
+                                        {{ qr_expiry_minutes }} min
+                                    </div>
+                                    <div class="col-4">
+                                        <span class="info-label">Late After</span>
+                                        8 min
+                                    </div>
+                                    <div class="col-4">
+                                        <span class="info-label">Security</span>
+                                        <i class="fas fa-lock" style="color: #00b894;"></i> JWT Signed
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Expired State -->
+                        <div id="qr-expired" style="display: none;">
+                            <div class="qr-placeholder">
+                                <i class="fas fa-clock d-block" style="color: rgba(231, 76, 60, 0.3);"></i>
+                                <p style="color: rgba(255,255,255,0.6);">QR Code has expired</p>
+                                <button type="button" id="btn-regenerate-qr" class="btn btn-qr-generate mt-3">
+                                    <i class="fas fa-redo mr-2"></i>Generate New QR
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Live Scan Log -->
+            <div class="col-lg-5">
+                <div class="scan-log-card card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-list-alt mr-2"></i>Live Scan Log</h3>
+                        <span class="scan-log-badge" id="scan-count-badge">
+                            <i class="fas fa-users mr-1"></i>
+                            <span id="scan-count">0</span> scanned
+                        </span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="scan-log-empty" class="scan-log-empty">
+                            <i class="fas fa-inbox d-block"></i>
+                            <p>No scans yet.<br>Students will appear here as they scan.</p>
+                        </div>
+                        <div id="scan-log-table-wrapper" style="display: none;">
+                            <table class="scan-log-table table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Student</th>
+                                        <th>Status</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scan-log-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock content %}
+
+{% block custom_js %}
+<script>
+$(document).ready(function () {
+    var currentQRSessionId = null;
+    var countdownInterval = null;
+    var logPollInterval = null;
+    var expiryTime = null;
+    var totalSeconds = {{ qr_expiry_minutes }} * 60;
+    var circumference = 2 * Math.PI * 42; // SVG circle radius = 42
+
+    // ── Generate QR ──────────────────────────────────────────
+    function generateQR(isRefresh) {
+        var subject = $('#qr-subject').val();
+        var session = $('#qr-session').val();
+
+        if (!subject || !session) {
+            alert('Please select both subject and session.');
+            return;
+        }
+
+        var url = isRefresh ? "{% url 'staff_refresh_qr' %}" : "{% url 'staff_generate_qr' %}";
+        var data = { subject: subject, session: session };
+        if (isRefresh && currentQRSessionId) {
+            data.qr_session_id = currentQRSessionId;
+        }
+
+        var $btn = isRefresh ? $('#btn-refresh-qr') : $('#btn-generate-qr');
+        $btn.prop('disabled', true).html('<span class="qr-spinner"></span>Generating...');
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: data,
+        }).done(function (resp) {
+            if (resp.success) {
+                currentQRSessionId = resp.qr_session_id;
+                expiryTime = new Date(resp.expires_at);
+
+                // Show QR
+                $('#qr-image').attr('src', resp.qr_image);
+                $('#qr-subject-name').text(resp.subject_name);
+                $('#qr-placeholder').hide();
+                $('#qr-expired').hide();
+                $('#qr-display').fadeIn(400);
+                $('#qr-image-wrapper').removeClass('expired').addClass('pulse-active');
+
+                // Start countdown
+                startCountdown(resp.expiry_seconds);
+
+                // Start polling log
+                startLogPolling();
+            } else {
+                alert(resp.error || 'Failed to generate QR');
+            }
+        }).fail(function () {
+            alert('Network error. Please try again.');
+        }).always(function () {
+            $btn.prop('disabled', false);
+            if (isRefresh) {
+                $btn.html('<i class="fas fa-sync-alt mr-1"></i> Refresh QR Code');
+            } else {
+                $btn.html('<i class="fas fa-qrcode mr-2"></i>Generate QR Code');
+            }
+        });
+    }
+
+    $('#btn-generate-qr').click(function () { generateQR(false); });
+    $('#btn-refresh-qr').click(function () { generateQR(true); });
+    $('#btn-regenerate-qr').click(function () { generateQR(false); });
+
+    // ── Countdown Timer ──────────────────────────────────────
+    function startCountdown(seconds) {
+        if (countdownInterval) clearInterval(countdownInterval);
+
+        var remaining = seconds;
+        var $ring = $('#ring-progress');
+        var $time = $('#countdown-time');
+
+        $ring.css('stroke-dasharray', circumference);
+        updateCountdownDisplay(remaining, $ring, $time, seconds);
+
+        countdownInterval = setInterval(function () {
+            remaining--;
+            if (remaining <= 0) {
+                clearInterval(countdownInterval);
+                onQRExpired();
+                return;
+            }
+            updateCountdownDisplay(remaining, $ring, $time, seconds);
+        }, 1000);
+    }
+
+    function updateCountdownDisplay(remaining, $ring, $time, total) {
+        var mins = Math.floor(remaining / 60);
+        var secs = remaining % 60;
+        $time.text(mins + ':' + (secs < 10 ? '0' : '') + secs);
+
+        var progress = remaining / total;
+        var offset = circumference * (1 - progress);
+        $ring.css('stroke-dashoffset', offset);
+
+        // Color changes
+        $ring.removeClass('warning danger');
+        if (progress <= 0.2) {
+            $ring.addClass('danger');
+        } else if (progress <= 0.4) {
+            $ring.addClass('warning');
+        }
+    }
+
+    function onQRExpired() {
+        $('#qr-display').hide();
+        $('#qr-expired').fadeIn(400);
+        $('#qr-image-wrapper').removeClass('pulse-active').addClass('expired');
+        if (logPollInterval) clearInterval(logPollInterval);
+    }
+
+    // ── Live Log Polling ─────────────────────────────────────
+    function startLogPolling() {
+        if (logPollInterval) clearInterval(logPollInterval);
+        fetchLog(); // Immediate first fetch
+        logPollInterval = setInterval(fetchLog, 5000);
+    }
+
+    function fetchLog() {
+        if (!currentQRSessionId) return;
+
+        $.ajax({
+            url: "{% url 'staff_qr_attendance_log' %}",
+            type: 'GET',
+            data: { qr_session_id: currentQRSessionId },
+        }).done(function (resp) {
+            var logs = resp.logs || [];
+            $('#scan-count').text(logs.length);
+
+            if (logs.length === 0) {
+                $('#scan-log-empty').show();
+                $('#scan-log-table-wrapper').hide();
+                return;
+            }
+
+            $('#scan-log-empty').hide();
+            $('#scan-log-table-wrapper').show();
+
+            var html = '';
+            for (var i = 0; i < logs.length; i++) {
+                html += '<tr>';
+                html += '<td>' + (i + 1) + '</td>';
+                html += '<td><strong>' + logs[i].student_name + '</strong></td>';
+                html += '<td><span class="status-badge ' + logs[i].status + '">' + logs[i].status + '</span></td>';
+                html += '<td>' + logs[i].scanned_at + '</td>';
+                html += '</tr>';
+            }
+            $('#scan-log-body').html(html);
+
+            if (!resp.is_active) {
+                if (logPollInterval) clearInterval(logPollInterval);
+            }
+        });
+    }
+});
+</script>
+{% endblock custom_js %}

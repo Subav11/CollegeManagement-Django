@@ -8,3 +8,5 @@ Pillow
 requests
 google-generativeai
 python-dotenv
+qrcode[pil]
+PyJWT
