@@ -1,0 +1,625 @@
+/* ============================================================
+   QR Code Attendance System — Premium Styles
+   ============================================================ */
+
+/* ── QR Display Card ──────────────────────────────────────── */
+.qr-card {
+    background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.qr-card .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-bottom: none;
+    padding: 18px 24px;
+}
+
+.qr-card .card-header h3 {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.qr-card .card-body {
+    padding: 30px;
+}
+
+/* ── QR Image Display ─────────────────────────────────────── */
+.qr-display-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    position: relative;
+}
+
+.qr-image-wrapper {
+    position: relative;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.25);
+    transition: all 0.4s ease;
+}
+
+.qr-image-wrapper:hover {
+    transform: scale(1.02);
+    box-shadow: 0 12px 48px rgba(102, 126, 234, 0.35);
+}
+
+.qr-image-wrapper img {
+    max-width: 280px;
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.qr-image-wrapper.pulse-active {
+    animation: qrPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes qrPulse {
+    0%, 100% { box-shadow: 0 8px 32px rgba(102, 126, 234, 0.25); }
+    50% { box-shadow: 0 8px 48px rgba(102, 126, 234, 0.5), 0 0 0 8px rgba(102, 126, 234, 0.1); }
+}
+
+.qr-image-wrapper.expired {
+    filter: grayscale(0.8) opacity(0.5);
+    animation: none;
+}
+
+/* ── Countdown Timer ──────────────────────────────────────── */
+.countdown-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 24px;
+    gap: 16px;
+}
+
+.countdown-ring {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+.countdown-ring svg {
+    transform: rotate(-90deg);
+    width: 100px;
+    height: 100px;
+}
+
+.countdown-ring .ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.1);
+    stroke-width: 6;
+}
+
+.countdown-ring .ring-progress {
+    fill: none;
+    stroke: url(#countdown-gradient);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-dasharray: 264;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear;
+}
+
+.countdown-ring .ring-progress.warning {
+    stroke: #f39c12;
+}
+
+.countdown-ring .ring-progress.danger {
+    stroke: #e74c3c;
+}
+
+.countdown-time {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    font-family: 'Source Sans Pro', monospace;
+}
+
+.countdown-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ── Generate/Refresh Buttons ─────────────────────────────── */
+.btn-qr-generate {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: #ffffff;
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+}
+
+.btn-qr-generate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+    color: #ffffff;
+}
+
+.btn-qr-generate:active {
+    transform: translateY(0);
+}
+
+.btn-qr-generate:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-qr-refresh {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    border: none;
+    color: #ffffff;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 12px;
+}
+
+.btn-qr-refresh:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+    color: #ffffff;
+}
+
+/* ── Placeholder (before QR generated) ────────────────────── */
+.qr-placeholder {
+    text-align: center;
+    padding: 48px 24px;
+}
+
+.qr-placeholder i {
+    font-size: 80px;
+    color: rgba(255, 255, 255, 0.15);
+    margin-bottom: 16px;
+}
+
+.qr-placeholder p {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 16px;
+    margin: 0;
+}
+
+/* ── Live Scan Log ────────────────────────────────────────── */
+.scan-log-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.scan-log-card .card-header {
+    background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);
+    border-bottom: none;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.scan-log-card .card-header h3 {
+    color: #ffffff;
+    font-weight: 600;
+    margin: 0;
+    font-size: 16px;
+}
+
+.scan-log-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.scan-log-table {
+    width: 100%;
+    margin: 0;
+}
+
+.scan-log-table thead th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #2d3436;
+    padding: 12px 16px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+}
+
+.scan-log-table tbody td {
+    padding: 12px 16px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f2f6;
+    font-size: 14px;
+}
+
+.scan-log-table tbody tr {
+    animation: fadeSlideIn 0.4s ease;
+}
+
+@keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.present {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.late {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.scan-log-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+}
+
+.scan-log-empty i {
+    font-size: 48px;
+    margin-bottom: 12px;
+    color: #ddd;
+}
+
+/* ── Select Form Card ─────────────────────────────────────── */
+.qr-form-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.qr-form-card .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-bottom: none;
+    padding: 14px 24px;
+}
+
+.qr-form-card .card-header h3 {
+    color: #ffffff;
+    font-weight: 600;
+    margin: 0;
+    font-size: 16px;
+}
+
+.qr-form-card .card-body {
+    padding: 24px;
+}
+
+/* ── Student Scanner ──────────────────────────────────────── */
+.scanner-card {
+    background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.scanner-card .card-header {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+    border-bottom: none;
+    padding: 18px 24px;
+}
+
+.scanner-card .card-header h3 {
+    color: #ffffff;
+    font-weight: 600;
+    margin: 0;
+}
+
+.scanner-card .card-body {
+    padding: 30px;
+}
+
+#qr-reader {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    margin: 0 auto;
+    max-width: 400px;
+}
+
+/* Override html5-qrcode library default styles */
+#qr-reader img[alt="Info icon"] { display: none !important; }
+#qr-reader__dashboard_section_csr button {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%) !important;
+    border: none !important;
+    color: #fff !important;
+    padding: 10px 24px !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+}
+#qr-reader__dashboard_section_csr button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 16px rgba(0, 184, 148, 0.4) !important;
+}
+#qr-reader__dashboard_section_swaplink {
+    color: rgba(255, 255, 255, 0.7) !important;
+    text-decoration: underline !important;
+}
+#qr-reader select {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+}
+#qr-reader__status_span {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* ── Scanner Tabs ─────────────────────────────────────────── */
+.scanner-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.scanner-tab-btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.scanner-tab-btn.active {
+    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+    border-color: transparent;
+    color: #ffffff;
+}
+
+.scanner-tab-btn:hover:not(.active) {
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* ── Upload Area ──────────────────────────────────────────── */
+.upload-area {
+    border: 3px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 0 auto;
+    max-width: 400px;
+}
+
+.upload-area:hover {
+    border-color: #00b894;
+    background: rgba(0, 184, 148, 0.05);
+}
+
+.upload-area i {
+    font-size: 48px;
+    color: rgba(255, 255, 255, 0.3);
+    margin-bottom: 12px;
+}
+
+.upload-area p {
+    color: rgba(255, 255, 255, 0.5);
+    margin: 4px 0 0;
+}
+
+.upload-area .upload-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Result Messages ──────────────────────────────────────── */
+.scan-result {
+    display: none;
+    text-align: center;
+    padding: 32px 24px;
+    border-radius: 16px;
+    margin-top: 24px;
+    animation: resultPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes resultPop {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.scan-result.success {
+    background: linear-gradient(135deg, rgba(0, 184, 148, 0.15) 0%, rgba(0, 206, 201, 0.15) 100%);
+    border: 2px solid rgba(0, 184, 148, 0.3);
+}
+
+.scan-result.error {
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(192, 57, 43, 0.15) 100%);
+    border: 2px solid rgba(231, 76, 60, 0.3);
+}
+
+.scan-result .result-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 36px;
+}
+
+.scan-result.success .result-icon {
+    background: rgba(0, 184, 148, 0.2);
+    color: #00b894;
+}
+
+.scan-result.error .result-icon {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+}
+
+.scan-result h4 {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 8px;
+}
+
+.scan-result p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    margin: 0;
+}
+
+.scan-result .status-pill {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    margin-top: 12px;
+}
+
+.scan-result .status-pill.present {
+    background: #00b894;
+    color: #ffffff;
+}
+
+.scan-result .status-pill.late {
+    background: #f39c12;
+    color: #ffffff;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .qr-image-wrapper img {
+        max-width: 220px;
+    }
+
+    .countdown-ring {
+        width: 80px;
+        height: 80px;
+    }
+
+    .countdown-ring svg {
+        width: 80px;
+        height: 80px;
+    }
+
+    .countdown-time {
+        font-size: 18px;
+    }
+
+    .qr-card .card-body,
+    .scanner-card .card-body {
+        padding: 20px;
+    }
+}
+
+/* ── Spinner ──────────────────────────────────────────────── */
+.qr-spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top: 3px solid #ffffff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Glassmorphism Info Card ──────────────────────────────── */
+.qr-info-glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 20px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+}
+
+.qr-info-glass i {
+    color: #667eea;
+    margin-right: 8px;
+}
+
+.qr-info-glass .info-label {
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* ── Scan Again Button ────────────────────────────────────── */
+.btn-scan-again {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: #ffffff;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 16px;
+}
+
+.btn-scan-again:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    color: #ffffff;
+}

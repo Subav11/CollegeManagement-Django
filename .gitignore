@@ -1,10 +1,15 @@
 # Environment variables
 .env
+.env.*
 
 # Python
 *.pyc
 __pycache__/
 *.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
 
 # Virtual environment
 venv/
@@ -12,19 +17,40 @@ venv/
 
 # Database
 db.sqlite3
+db.sqlite3-journal
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+.project
+.settings/
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Static files (collected)
-static/
+# Static files (collected by collectstatic at project root)
+# NOTE: Use /static/ (leading slash) so it only ignores the root-level
+# collected static folder, NOT main_app/static/ which is source code.
+/static/
+/staticfiles/
 
 # Media uploads
 media/
+
+# Logs
+*.log
+
+# Coverage / Testing
+htmlcov/
+.coverage
+.pytest_cache/
+.tox/
+
+# Misc
+*.bak
+*.tmp

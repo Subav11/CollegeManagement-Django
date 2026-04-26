@@ -1,0 +1,366 @@
+/* ==========================================================================
+   College Management System - Dashboard Enhancements
+   Dashboard widgets, stat cards, charts, and data visualization styles
+   ========================================================================== */
+
+/* ---------- Dashboard Welcome Banner ---------- */
+.dashboard-welcome {
+    background: var(--primary-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+    border-radius: 0.75rem;
+    padding: 2rem;
+    color: #fff;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-welcome::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+}
+
+.dashboard-welcome h2 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-welcome p {
+    opacity: 0.9;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+/* ---------- Enhanced Stat Cards ---------- */
+.info-box {
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: none;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    overflow: hidden;
+}
+
+.info-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.info-box .info-box-icon {
+    border-radius: 0.75rem 0 0 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    font-size: 1.5rem;
+}
+
+.info-box .info-box-icon.bg-info {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+}
+
+.info-box .info-box-icon.bg-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+}
+
+.info-box .info-box-icon.bg-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+}
+
+.info-box .info-box-icon.bg-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+}
+
+.info-box-number {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: #1f2937;
+}
+
+.info-box-text {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+}
+
+/* ---------- Chart Card Improvements ---------- */
+.card.chart-card {
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
+.card.chart-card .card-header {
+    background: transparent;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem 1.25rem;
+}
+
+.card.chart-card .card-header .card-title {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #1f2937;
+}
+
+.card.chart-card .card-body {
+    padding: 1.25rem;
+}
+
+/* ---------- Quick Action Buttons ---------- */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem 0.75rem;
+    border-radius: 0.75rem;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    text-align: center;
+}
+
+.quick-action-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-color: #667eea;
+    color: #667eea;
+    text-decoration: none;
+}
+
+.quick-action-btn i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.quick-action-btn span {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* ---------- Recent Activity Widget ---------- */
+.activity-feed {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.activity-feed .activity-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.875rem 0;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.2s ease;
+}
+
+.activity-feed .activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-feed .activity-item:hover {
+    background: #f9fafb;
+    margin: 0 -1.25rem;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+}
+
+.activity-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    color: #fff;
+}
+
+.activity-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-content .activity-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #1f2937;
+    margin-bottom: 2px;
+}
+
+.activity-content .activity-time {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+/* ---------- Progress Bar Enhancements ---------- */
+.progress {
+    height: 8px;
+    border-radius: 50rem;
+    background: #e5e7eb;
+    overflow: hidden;
+}
+
+.progress-bar {
+    border-radius: 50rem;
+    transition: width 1s ease-in-out;
+}
+
+.progress-bar.bg-info {
+    background: linear-gradient(90deg, #3b82f6 0%, #667eea 100%) !important;
+}
+
+.progress-bar.bg-success {
+    background: linear-gradient(90deg, #10b981 0%, #34d399 100%) !important;
+}
+
+.progress-bar.bg-warning {
+    background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%) !important;
+}
+
+.progress-bar.bg-danger {
+    background: linear-gradient(90deg, #ef4444 0%, #f87171 100%) !important;
+}
+
+/* ---------- Notification Badges ---------- */
+.notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* ---------- Data Grid Layout ---------- */
+.data-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+
+/* ---------- Empty State ---------- */
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #9ca3af;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    font-size: 0.9rem;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+/* ---------- Skeleton Loaders ---------- */
+.skeleton {
+    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: 0.375rem;
+}
+
+.skeleton-text {
+    height: 14px;
+    margin-bottom: 8px;
+}
+
+.skeleton-text:last-child {
+    width: 60%;
+}
+
+.skeleton-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+.skeleton-box {
+    height: 120px;
+}
+
+@keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ---------- Counter Animation ---------- */
+.counter-value {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 2rem;
+    color: #1f2937;
+}
+
+/* ---------- Section Header ---------- */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.section-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.section-header .view-all {
+    font-size: 0.85rem;
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.section-header .view-all:hover {
+    color: #5a6fd6;
+}
