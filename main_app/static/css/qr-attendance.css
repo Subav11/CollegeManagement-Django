@@ -623,3 +623,105 @@
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     color: #ffffff;
 }
+
+/* ── Date Input (Dark Theme) ─────────────────────────────── */
+input[type="date"].form-control {
+    color-scheme: dark;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #333;
+    border-radius: 8px;
+    padding: 8px 12px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input[type="date"].form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    outline: none;
+}
+
+/* ── Geolocation Status Bar (Staff) ──────────────────────── */
+.geo-status-bar {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.4s ease;
+    animation: geoFadeIn 0.5s ease;
+}
+
+@keyframes geoFadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.geo-status-bar.geo-loading {
+    background: rgba(108, 92, 231, 0.1);
+    border: 1px solid rgba(108, 92, 231, 0.2);
+    color: #6c5ce7;
+}
+
+.geo-status-bar.geo-success {
+    background: rgba(0, 184, 148, 0.1);
+    border: 1px solid rgba(0, 184, 148, 0.25);
+    color: #00b894;
+}
+
+.geo-status-bar.geo-warning {
+    background: rgba(253, 203, 110, 0.12);
+    border: 1px solid rgba(253, 203, 110, 0.3);
+    color: #e17055;
+}
+
+.geo-status-text {
+    flex: 1;
+}
+
+/* ── Student Geo Pill ────────────────────────────────────── */
+.student-geo-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 16px;
+    transition: all 0.4s ease;
+    animation: geoFadeIn 0.5s ease;
+}
+
+.student-geo-pill.geo-loading {
+    background: rgba(108, 92, 231, 0.15);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.student-geo-pill.geo-success {
+    background: rgba(0, 184, 148, 0.15);
+    color: #00b894;
+}
+
+.student-geo-pill.geo-warning {
+    background: rgba(225, 112, 85, 0.15);
+    color: #e17055;
+}
+
+/* ── Geo Warning Banner (Student) ────────────────────────── */
+.geo-warning-banner {
+    background: linear-gradient(135deg, rgba(225, 112, 85, 0.15) 0%, rgba(214, 48, 49, 0.15) 100%);
+    border: 1px solid rgba(225, 112, 85, 0.3);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    color: #e17055;
+    font-size: 14px;
+    font-weight: 500;
+    animation: geoFadeIn 0.5s ease;
+}

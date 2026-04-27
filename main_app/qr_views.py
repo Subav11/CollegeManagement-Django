@@ -5,8 +5,9 @@ Student endpoints: scan QR and validate attendance.
 """
 import io
 import json
+import math
 import base64
-from datetime import timedelta
+from datetime import timedelta, date
 
 import jwt
 import qrcode
@@ -26,6 +27,42 @@ from .models import (
 QR_EXPIRY_MINUTES = 10          # Fixed 10-minute window
 LATE_THRESHOLD_PERCENT = 0.80   # Last 20% of window = "late"
 JWT_ALGORITHM = "HS256"
+GEO_FENCE_RADIUS_METERS = 50    # Maximum allowed distance from teacher
+
+
+# ======================================================================
+#  GEOLOCATION HELPERS
+# ======================================================================
+
+def _haversine_distance(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great-circle distance between two points
+    on Earth using the Haversine formula.
+    Returns distance in meters.
+    """
+    R = 6_371_000  # Earth's radius in meters
+
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
+    a = (math.sin(delta_phi / 2) ** 2 +
+         math.cos(phi1) * math.cos(phi2) *
+         math.sin(delta_lambda / 2) ** 2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    return R * c
+
+
+def _parse_float(value):
+    """Safely parse a float from request data, return None on failure."""
+    if value is None or value == '':
+        return None
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return None
 
 
 # ======================================================================
@@ -42,6 +79,7 @@ def staff_qr_attendance(request):
         'sessions': sessions,
         'page_title': 'QR Code Attendance',
         'qr_expiry_minutes': QR_EXPIRY_MINUTES,
+        'today': date.today().isoformat(),
     }
     return render(request, 'staff_template/staff_qr_attendance.html', context)
 
@@ -55,9 +93,18 @@ def staff_generate_qr(request):
     staff = get_object_or_404(Staff, admin=request.user)
     subject_id = request.POST.get('subject')
     session_id = request.POST.get('session')
+    attendance_date_str = request.POST.get('attendance_date', '')
+    staff_lat = _parse_float(request.POST.get('latitude'))
+    staff_lon = _parse_float(request.POST.get('longitude'))
 
     if not subject_id or not session_id:
         return JsonResponse({'error': 'Subject and session are required'}, status=400)
+
+    # Parse attendance date (default to today)
+    try:
+        attendance_date = date.fromisoformat(attendance_date_str) if attendance_date_str else date.today()
+    except ValueError:
+        attendance_date = date.today()
 
     try:
         subject = get_object_or_404(Subject, id=subject_id, staff=staff)
@@ -79,8 +126,11 @@ def staff_generate_qr(request):
         subject=subject,
         session=session,
         token='placeholder',
+        attendance_date=attendance_date,
         expires_at=expires_at,
         is_active=True,
+        latitude=staff_lat,
+        longitude=staff_lon,
     )
 
     # Generate signed JWT
@@ -89,15 +139,23 @@ def staff_generate_qr(request):
         'subject_id': subject.pk,
         'session_id': session.pk,
         'staff_id': staff.pk,
+        'attendance_date': attendance_date.isoformat(),
         'iat': int(now.timestamp()),
         'exp': int(expires_at.timestamp()),
     }
+    # Include geolocation in JWT if available
+    if staff_lat is not None and staff_lon is not None:
+        payload['latitude'] = staff_lat
+        payload['longitude'] = staff_lon
+
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm=JWT_ALGORITHM)
     qr_session.token = token
     qr_session.save(update_fields=['token'])
 
     # Generate QR code image as base64
     qr_image_b64 = _generate_qr_image(token)
+
+    has_location = staff_lat is not None and staff_lon is not None
 
     return JsonResponse({
         'success': True,
@@ -106,6 +164,8 @@ def staff_generate_qr(request):
         'expires_at': expires_at.isoformat(),
         'expiry_seconds': QR_EXPIRY_MINUTES * 60,
         'subject_name': subject.name,
+        'attendance_date': attendance_date.isoformat(),
+        'has_location': has_location,
     })
 
 
@@ -156,6 +216,7 @@ def staff_qr_attendance_log(request):
         'logs': log_data,
         'total': len(log_data),
         'is_active': qr_session.is_active and qr_session.expires_at > timezone.now(),
+        'attendance_date': qr_session.attendance_date.isoformat(),
     })
 
 
@@ -182,6 +243,8 @@ def student_validate_qr(request):
     student = get_object_or_404(Student, admin=request.user)
     token = request.POST.get('token', '').strip()
     user_agent = request.META.get('HTTP_USER_AGENT', '')
+    student_lat = _parse_float(request.POST.get('latitude'))
+    student_lon = _parse_float(request.POST.get('longitude'))
 
     if not token:
         return JsonResponse({'success': False, 'error': 'No QR data received'})
@@ -209,6 +272,27 @@ def student_validate_qr(request):
     if now > qr_session.expires_at:
         return JsonResponse({'success': False, 'error': 'This QR code has expired.'})
 
+    # ── Geolocation check (50m radius) ──
+    teacher_lat = qr_session.latitude
+    teacher_lon = qr_session.longitude
+
+    if teacher_lat is not None and teacher_lon is not None:
+        # Teacher had location — enforce geo-fence
+        if student_lat is None or student_lon is None:
+            return JsonResponse({
+                'success': False,
+                'error': 'Location access is required to mark attendance. '
+                         'Please enable location services and try again.'
+            })
+
+        distance = _haversine_distance(teacher_lat, teacher_lon, student_lat, student_lon)
+        if distance > GEO_FENCE_RADIUS_METERS:
+            return JsonResponse({
+                'success': False,
+                'error': f'You are approximately {int(distance)}m away from the classroom. '
+                         f'You must be within {GEO_FENCE_RADIUS_METERS}m to mark attendance.'
+            })
+
     # ── Check student belongs to the subject's course ──
     subject = qr_session.subject
     if student.course_id != subject.course_id:
@@ -223,12 +307,12 @@ def student_validate_qr(request):
     elapsed = (now - qr_session.created_at).total_seconds()
     status = 'late' if elapsed > (total_window * LATE_THRESHOLD_PERCENT) else 'present'
 
-    # ── Create or get Attendance record for today ──
-    today = now.date()
+    # ── Create or get Attendance record for the attendance_date ──
+    att_date = qr_session.attendance_date
     attendance, _ = Attendance.objects.get_or_create(
         subject=subject,
         session=qr_session.session,
-        date=today,
+        date=att_date,
     )
 
     # ── Create AttendanceReport (integrates with existing system) ──
@@ -249,12 +333,15 @@ def student_validate_qr(request):
         attendance_report=attendance_report,
         status=status,
         user_agent=user_agent,
+        scan_latitude=student_lat,
+        scan_longitude=student_lon,
     )
 
     return JsonResponse({
         'success': True,
         'status': status,
         'subject': subject.name,
+        'attendance_date': att_date.isoformat(),
         'message': f'Attendance marked as {"Present" if status == "present" else "Late"} for {subject.name}',
         'scanned_at': now.strftime('%I:%M:%S %p'),
     })

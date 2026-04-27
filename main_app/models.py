@@ -181,15 +181,19 @@ class QRAttendanceSession(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     session = models.ForeignKey(Session, on_delete=models.CASCADE)
     token = models.CharField(max_length=1024, unique=True)
+    attendance_date = models.DateField(help_text="The date attendance is being taken for")
     expires_at = models.DateTimeField()
     is_active = models.BooleanField(default=True)
+    # Teacher's geolocation at QR generation time
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"QR Session #{self.pk} - {self.subject.name} ({self.created_at})"
+        return f"QR Session #{self.pk} - {self.subject.name} ({self.attendance_date})"
 
 
 class QRAttendanceLog(models.Model):
@@ -202,6 +206,9 @@ class QRAttendanceLog(models.Model):
     scanned_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='present')
     user_agent = models.TextField(blank=True, default='')
+    # Student's geolocation at scan time
+    scan_latitude = models.FloatField(null=True, blank=True)
+    scan_longitude = models.FloatField(null=True, blank=True)
 
     class Meta:
         unique_together = ('qr_session', 'student')

@@ -12,6 +12,15 @@
         <div class="row justify-content-center">
             <div class="col-lg-7 col-md-10">
 
+                <!-- Geolocation Warning Banner -->
+                <div class="geo-warning-banner" id="geo-warning-banner" style="display: none;">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <span id="geo-warning-text">Location access is required to mark attendance.</span>
+                    <button class="btn btn-sm btn-outline-light ml-2" onclick="requestStudentLocation()">
+                        <i class="fas fa-map-marker-alt mr-1"></i>Enable Location
+                    </button>
+                </div>
+
                 <!-- Scanner Card -->
                 <div class="scanner-card card">
                     <div class="card-header">
@@ -48,10 +57,13 @@
                             <input type="file" id="qr-file-input" accept="image/*" style="display: none;">
                         </div>
 
-                        <!-- Result Display -->
-                        <div id="scan-result" class="scan-result">
-                            <!-- Filled dynamically -->
+                        <!-- Location Status Pill -->
+                        <div class="student-geo-pill" id="student-geo-pill">
+                            <i class="fas fa-spinner fa-spin mr-1"></i> Getting location…
                         </div>
+
+                        <!-- Result Display -->
+                        <div id="scan-result" class="scan-result"></div>
 
                     </div>
                 </div>
@@ -63,25 +75,32 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4 text-center mb-3">
+                            <div class="col-md-3 text-center mb-3">
                                 <div style="font-size: 36px; color: #667eea; margin-bottom: 8px;">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <h6>1. Location</h6>
+                                <p class="text-muted mb-0" style="font-size: 13px;">Allow location access — you must be within 50m of your teacher</p>
+                            </div>
+                            <div class="col-md-3 text-center mb-3">
+                                <div style="font-size: 36px; color: #00b894; margin-bottom: 8px;">
                                     <i class="fas fa-camera"></i>
                                 </div>
-                                <h6>1. Scan</h6>
+                                <h6>2. Scan</h6>
                                 <p class="text-muted mb-0" style="font-size: 13px;">Point camera at the QR code shown by your teacher</p>
                             </div>
-                            <div class="col-md-4 text-center mb-3">
-                                <div style="font-size: 36px; color: #00b894; margin-bottom: 8px;">
+                            <div class="col-md-3 text-center mb-3">
+                                <div style="font-size: 36px; color: #fdcb6e; margin-bottom: 8px;">
                                     <i class="fas fa-check-circle"></i>
                                 </div>
-                                <h6>2. Verify</h6>
-                                <p class="text-muted mb-0" style="font-size: 13px;">System verifies your identity and session validity</p>
+                                <h6>3. Verify</h6>
+                                <p class="text-muted mb-0" style="font-size: 13px;">System verifies your identity, location & session</p>
                             </div>
-                            <div class="col-md-4 text-center mb-3">
+                            <div class="col-md-3 text-center mb-3">
                                 <div style="font-size: 36px; color: #764ba2; margin-bottom: 8px;">
                                     <i class="fas fa-clipboard-check"></i>
                                 </div>
-                                <h6>3. Done!</h6>
+                                <h6>4. Done!</h6>
                                 <p class="text-muted mb-0" style="font-size: 13px;">Attendance is marked automatically</p>
                             </div>
                         </div>
@@ -95,182 +114,143 @@
 {% endblock content %}
 
 {% block custom_js %}
-<!-- html5-qrcode library (CDN) -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
-$(document).ready(function () {
-    var html5QrCode = null;
-    var isProcessing = false;
+var studentLat = null, studentLon = null, geoAcquired = false;
 
-    // ── Initialize Camera Scanner ────────────────────────────
+function requestStudentLocation() {
+    if (!navigator.geolocation) {
+        setStudentGeo('warning', '<i class="fas fa-exclamation-triangle mr-1"></i> Geolocation not supported');
+        geoAcquired = true; return;
+    }
+    setStudentGeo('loading', '<i class="fas fa-spinner fa-spin mr-1"></i> Getting location…');
+    navigator.geolocation.getCurrentPosition(function (pos) {
+        studentLat = pos.coords.latitude; studentLon = pos.coords.longitude; geoAcquired = true;
+        setStudentGeo('success', '<i class="fas fa-check-circle mr-1"></i> Location ready');
+        $('#geo-warning-banner').slideUp();
+    }, function (err) {
+        geoAcquired = true; studentLat = null; studentLon = null;
+        var msg = err.code === 1 ? 'Permission denied' : err.code === 3 ? 'Timed out' : 'Unavailable';
+        setStudentGeo('warning', '<i class="fas fa-exclamation-triangle mr-1"></i> Location: ' + msg);
+        $('#geo-warning-banner').slideDown();
+        $('#geo-warning-text').text('Location access denied. You may not be able to mark attendance if geo-fence is active.');
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+}
+
+function setStudentGeo(state, html) {
+    var $pill = $('#student-geo-pill');
+    $pill.removeClass('geo-loading geo-success geo-warning').addClass('geo-' + state).html(html);
+}
+
+requestStudentLocation();
+
+$(document).ready(function () {
+    var html5QrCode = null, isProcessing = false;
+
     function initScanner() {
         html5QrCode = new Html5Qrcode("qr-reader");
-
-        var config = {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0,
-        };
-
+        var config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
         Html5Qrcode.getCameras().then(function (cameras) {
             if (cameras && cameras.length > 0) {
-                // Prefer back camera
                 var cameraId = cameras[0].id;
                 for (var i = 0; i < cameras.length; i++) {
-                    if (cameras[i].label.toLowerCase().includes('back') ||
-                        cameras[i].label.toLowerCase().includes('rear') ||
-                        cameras[i].label.toLowerCase().includes('environment')) {
-                        cameraId = cameras[i].id;
-                        break;
-                    }
+                    if (cameras[i].label.toLowerCase().match(/back|rear|environment/)) { cameraId = cameras[i].id; break; }
                 }
-
-                html5QrCode.start(
-                    cameraId,
-                    config,
-                    onScanSuccess,
-                    function (errorMessage) { /* ignore scan errors */ }
-                ).catch(function (err) {
-                    console.error("Camera start error:", err);
+                html5QrCode.start(cameraId, config, onScanSuccess, function(){}).catch(function (err) {
                     showScanError("Could not start camera. Please use the upload option instead.");
                 });
-            } else {
-                showScanError("No cameras found. Please use the upload option.");
-            }
-        }).catch(function (err) {
-            console.error("Camera access error:", err);
+            } else { showScanError("No cameras found. Please use the upload option."); }
+        }).catch(function () {
             showScanError("Camera access denied. Please allow camera permission or use the upload option.");
         });
     }
-
-    // Start scanner on page load
     initScanner();
 
-    // ── QR Scan Success ──────────────────────────────────────
     function onScanSuccess(decodedText) {
         if (isProcessing) return;
         isProcessing = true;
-
-        // Stop scanner temporarily
-        if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop().catch(function () {});
+        if (html5QrCode && html5QrCode.isScanning) html5QrCode.stop().catch(function(){});
+        // Ensure we have fresh location before validating
+        if (!geoAcquired || (studentLat === null && navigator.geolocation)) {
+            setStudentGeo('loading', '<i class="fas fa-spinner fa-spin mr-1"></i> Getting location…');
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                studentLat = pos.coords.latitude; studentLon = pos.coords.longitude; geoAcquired = true;
+                setStudentGeo('success', '<i class="fas fa-check-circle mr-1"></i> Location ready');
+                validateQR(decodedText);
+            }, function() {
+                geoAcquired = true;
+                validateQR(decodedText);
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+        } else {
+            validateQR(decodedText);
         }
-
-        validateQR(decodedText);
     }
 
-    // ── Validate QR with Backend ─────────────────────────────
     function validateQR(token) {
-        $.ajax({
-            url: "{% url 'student_validate_qr' %}",
-            type: 'POST',
-            data: { token: token },
-        }).done(function (resp) {
-            if (resp.success) {
-                showScanSuccess(resp);
-            } else {
-                showScanError(resp.error);
-            }
+        var data = { token: token };
+        if (studentLat !== null && studentLon !== null) { data.latitude = studentLat; data.longitude = studentLon; }
+        $.ajax({ url: "{% url 'student_validate_qr' %}", type: 'POST', data: data }).done(function (resp) {
+            if (resp.success) showScanSuccess(resp); else showScanError(resp.error);
         }).fail(function () {
             showScanError('Network error. Please check your connection and try again.');
-        }).always(function () {
-            isProcessing = false;
-        });
+        }).always(function () { isProcessing = false; });
     }
 
-    // ── Show Success ─────────────────────────────────────────
     function showScanSuccess(data) {
-        var statusClass = data.status === 'late' ? 'late' : 'present';
-        var statusText = data.status === 'late' ? 'Late' : 'Present';
-        var icon = data.status === 'late' ? 'fas fa-clock' : 'fas fa-check';
-
-        var html = '<div class="result-icon"><i class="' + icon + '"></i></div>';
+        var sc = data.status === 'late' ? 'late' : 'present';
+        var st = data.status === 'late' ? 'Late' : 'Present';
+        var ic = data.status === 'late' ? 'fas fa-clock' : 'fas fa-check';
+        var html = '<div class="result-icon"><i class="' + ic + '"></i></div>';
         html += '<h4>Attendance Marked!</h4>';
         html += '<p>' + data.message + '</p>';
-        html += '<span class="status-pill ' + statusClass + '">' + statusText + '</span>';
-        html += '<p style="margin-top: 12px; font-size: 12px; color: rgba(255,255,255,0.4);">Scanned at ' + data.scanned_at + '</p>';
+        if (data.attendance_date) html += '<p style="font-size:13px;color:rgba(255,255,255,0.5);"><i class="fas fa-calendar-day mr-1"></i>Date: ' + data.attendance_date + '</p>';
+        html += '<span class="status-pill ' + sc + '">' + st + '</span>';
+        html += '<p style="margin-top:12px;font-size:12px;color:rgba(255,255,255,0.4);">Scanned at ' + data.scanned_at + '</p>';
         html += '<button class="btn btn-scan-again" onclick="resetScanner()"><i class="fas fa-redo mr-1"></i>Scan Another</button>';
-
         $('#scan-result').html(html).removeClass('error').addClass('success').fadeIn(400);
     }
 
-    // ── Show Error ───────────────────────────────────────────
     function showScanError(message) {
         var html = '<div class="result-icon"><i class="fas fa-times"></i></div>';
-        html += '<h4>Scan Failed</h4>';
-        html += '<p>' + message + '</p>';
+        html += '<h4>Scan Failed</h4><p>' + message + '</p>';
         html += '<button class="btn btn-scan-again" onclick="resetScanner()"><i class="fas fa-redo mr-1"></i>Try Again</button>';
-
         $('#scan-result').html(html).removeClass('success').addClass('error').fadeIn(400);
     }
 
-    // ── File Upload Handling ─────────────────────────────────
     $('#qr-file-input').on('change', function (e) {
-        var file = e.target.files[0];
-        if (!file) return;
-
-        if (isProcessing) return;
+        var file = e.target.files[0]; if (!file || isProcessing) return;
         isProcessing = true;
-
         var tempQrCode = new Html5Qrcode("qr-reader");
         tempQrCode.scanFile(file, true).then(function (decodedText) {
-            tempQrCode.clear();
-            validateQR(decodedText);
-        }).catch(function (err) {
-            tempQrCode.clear();
-            isProcessing = false;
+            tempQrCode.clear(); onScanSuccess(decodedText);
+        }).catch(function () {
+            tempQrCode.clear(); isProcessing = false;
             showScanError('Could not read QR code from the image. Please try a clearer image.');
         });
-
-        // Reset file input
         $(this).val('');
     });
 
-    // Drag & drop
     var $uploadArea = $('#upload-area');
-    $uploadArea.on('dragover', function (e) {
-        e.preventDefault();
-        $(this).css('border-color', '#00b894');
-    }).on('dragleave', function () {
-        $(this).css('border-color', 'rgba(255, 255, 255, 0.2)');
-    }).on('drop', function (e) {
-        e.preventDefault();
-        $(this).css('border-color', 'rgba(255, 255, 255, 0.2)');
+    $uploadArea.on('dragover', function(e){ e.preventDefault(); $(this).css('border-color','#00b894'); })
+    .on('dragleave', function(){ $(this).css('border-color','rgba(255,255,255,0.2)'); })
+    .on('drop', function(e){
+        e.preventDefault(); $(this).css('border-color','rgba(255,255,255,0.2)');
         var file = e.originalEvent.dataTransfer.files[0];
-        if (file) {
-            var dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            document.getElementById('qr-file-input').files = dataTransfer.files;
-            $('#qr-file-input').trigger('change');
-        }
+        if (file) { var dt = new DataTransfer(); dt.items.add(file); document.getElementById('qr-file-input').files = dt.files; $('#qr-file-input').trigger('change'); }
     });
 
-    // ── Make resetScanner globally accessible ─────────────────
     window.resetScanner = function () {
-        $('#scan-result').fadeOut(300, function () {
-            $(this).html('').removeClass('success error');
-        });
+        $('#scan-result').fadeOut(300, function(){ $(this).html('').removeClass('success error'); });
         isProcessing = false;
-
-        // Restart camera if on camera tab
-        if ($('#tab-camera').hasClass('active')) {
-            initScanner();
-        }
+        if ($('#tab-camera').hasClass('active')) initScanner();
     };
 });
 
-// ── Tab Switching ─────────────────────────────────────────────
 function switchTab(mode) {
     $('.scanner-tab-btn').removeClass('active');
     $('#tab-' + mode).addClass('active');
-
-    if (mode === 'camera') {
-        $('#scanner-camera-section').show();
-        $('#scanner-upload-section').hide();
-    } else {
-        $('#scanner-camera-section').hide();
-        $('#scanner-upload-section').show();
-    }
+    if (mode === 'camera') { $('#scanner-camera-section').show(); $('#scanner-upload-section').hide(); }
+    else { $('#scanner-camera-section').hide(); $('#scanner-upload-section').show(); }
 }
 </script>
 {% endblock custom_js %}
